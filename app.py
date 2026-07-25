@@ -5,6 +5,7 @@ import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
 from dotenv import load_dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
+from urllib.parse import urlparse, parse_qs
 from warnings import filterwarnings
 
 
@@ -36,6 +37,28 @@ def streamlit_config():
     st.markdown(f'<h2 style="text-align: center;">YouTube Transcript Summarizer with GenAI</h2>',
                 unsafe_allow_html=True)
     add_vertical_space(2)
+
+
+
+def extract_video_id(url):
+
+    # Handles youtu.be, watch?v=, /embed/, and /shorts/ URL formats
+    parsed = urlparse(url.strip())
+
+    if parsed.hostname in ('youtu.be', 'www.youtu.be'):
+        return parsed.path.lstrip('/').split('/')[0]
+
+    if parsed.hostname in ('youtube.com', 'www.youtube.com', 'm.youtube.com'):
+        if parsed.path == '/watch':
+            query_params = parse_qs(parsed.query)
+            video_ids = query_params.get('v')
+            return video_ids[0] if video_ids else None
+        if parsed.path.startswith('/embed/'):
+            return parsed.path.split('/embed/')[1].split('/')[0]
+        if parsed.path.startswith('/shorts/'):
+            return parsed.path.split('/shorts/')[1].split('/')[0]
+
+    return None
 
 
 
@@ -127,7 +150,11 @@ def main():
 
         if video_link:
             # Extract the Video ID From URL
-            video_id = video_link.split('=')[1].split('&')[0]
+            video_id = extract_video_id(video_link)
+
+            if not video_id:
+                st.error('Could not recognize that as a valid YouTube link. Please check the URL and try again.')
+                st.stop()
 
             # Extract Language from Video_ID
             language_list, language_dict = extract_languages(video_id)

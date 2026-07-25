@@ -42,7 +42,8 @@ def streamlit_config():
 def extract_languages(video_id):
 
     # Fetch the List of Available Transcripts for Given Video
-    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    ytt_api = YouTubeTranscriptApi()
+    transcript_list = ytt_api.list(video_id)
 
     # Extract the Language Codes from List ---> ['en','ta']
     available_transcripts = [i.language_code for i in transcript_list]
@@ -61,7 +62,9 @@ def extract_transcript(video_id, language):
     
     try:
         # Request Transcript for YouTube Video using API
-        transcript_content = YouTubeTranscriptApi.get_transcript(video_id=video_id, languages=[language])
+        ytt_api = YouTubeTranscriptApi()
+        fetched_transcript = ytt_api.fetch(video_id, languages=[language])
+        transcript_content = fetched_transcript.to_raw_data()
     
         # Extract Transcript Content from JSON Response and Join to Single Response
         transcript = ' '.join([i['text'] for i in transcript_content])
@@ -81,8 +84,8 @@ def generate_summary(transcript_text):
         # Configures the genai Library
         genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
 
-        # Initializes a Gemini-Pro Generative Model
-        model = genai.GenerativeModel(model_name = 'gemini-pro')  
+        # Initializes a Gemini Generative Model
+        model = genai.GenerativeModel(model_name = 'gemini-flash-latest')  
 
         # Define a Prompt for AI Model
         prompt = """You are a YouTube video summarizer. You will be taking the transcript text and summarizing the entire video, 
@@ -115,7 +118,7 @@ def main():
 
     with st.sidebar:
 
-        image_url = 'https://raw.githubusercontent.com/gopiashokan/YouTube-Video-Transcript-Summarizer-with-GenAI/main/image/youtube_banner.JPG'
+        image_url = 'https://raw.githubusercontent.com/punithgowda01/YouTube-Video-Transcript-Summarizer-with-Generative-AI/main/image/youtube_banner.JPG'
         st.image(image_url, use_column_width=True)
         add_vertical_space(2)
 
@@ -175,4 +178,3 @@ if __name__ == '__main__':
     except Exception as e:
         add_vertical_space(5)
         st.markdown(f'<h5 style="text-position:center;color:orange;">{e}</h5>', unsafe_allow_html=True)
-

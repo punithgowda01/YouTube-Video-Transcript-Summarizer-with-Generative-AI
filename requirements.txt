@@ -2,6 +2,6 @@ python-dotenv
 streamlit
 streamlit-extras
 youtube-transcript-api>=1.0.0
-google-generativeai
+groq
 langcodes
 language_data

@@ -1,6 +1,6 @@
 import os
 import langcodes
-import google.generativeai as genai
+from groq import Groq
 import streamlit as st
 from streamlit_extras.add_vertical_space import add_vertical_space
 from dotenv import load_dotenv
@@ -104,20 +104,22 @@ def extract_transcript(video_id, language):
 def generate_summary(transcript_text):
 
     try:
-        # Configures the genai Library
-        genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
-
-        # Initializes a Gemini Generative Model
-        model = genai.GenerativeModel(model_name = 'gemini-flash-latest')  
+        # Initializes the Groq Client
+        client = Groq(api_key=os.environ['GROQ_API_KEY'])
 
         # Define a Prompt for AI Model
         prompt = """You are a YouTube video summarizer. You will be taking the transcript text and summarizing the entire video, 
                     providing the important points are proper sub-heading in a concise manner (within 500 words). 
                     Please provide the summary of the text given here: """
-        
-        response = model.generate_content(prompt + transcript_text)
 
-        return response.text
+        response = client.chat.completions.create(
+            model='openai/gpt-oss-120b',
+            messages=[
+                {'role': 'user', 'content': prompt + transcript_text}
+            ]
+        )
+
+        return response.choices[0].message.content
 
     except Exception as e:
         add_vertical_space(5)
